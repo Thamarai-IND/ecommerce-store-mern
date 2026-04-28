@@ -141,7 +141,7 @@ export const AdminPanelPage: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="mx-auto px-4">
         <h1 className="text-4xl font-bold mb-8">Admin Product Management</h1>
 
         {error && (
@@ -150,11 +150,11 @@ export const AdminPanelPage: React.FC = () => {
           </div>
         )}
 
-        <div className="flex gap-4 mb-8 flex-wrap items-center">
+        <div className="flex gap-8 mb-8 items-center justify-end">
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="input"
+            className="input max-w-[50%] appearance-none pr-4"
           >
             <option value="">All Categories</option>
             {categories.map((cat) => (
@@ -173,112 +173,114 @@ export const AdminPanelPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Add/Edit Form */}
+        {/* Add/Edit Form Modal */}
         {showForm && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-              <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700">
-                <X className="w-6 h-6" />
-              </button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
+                <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Product Name *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="input"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category *</label>
+                    <input
+                      type="text"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="input"
+                      placeholder="e.g., Electronics"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Price *</label>
+                    <input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                      className="input"
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Stock</label>
+                    <input
+                      type="number"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
+                      className="input"
+                      min="0"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-1">Product Image URL</label>
+                    <input
+                      type="url"
+                      value={formData.image || ''}
+                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      className="input"
+                      placeholder="https://example.com/product-image.jpg"
+                    />
+                  </div>
+                </div>
+
+                {formData.image && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Image Preview</label>
+                    <img
+                      src={formData.image}
+                      alt="Product preview"
+                      className="w-32 h-32 rounded-lg object-cover border"
+                      onError={() => setError('Invalid image URL. Please provide a valid public image link.')}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="input"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <button type="submit" disabled={loading} className="btn btn-primary">
+                    {loading ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Product Name *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Category *</label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="input"
-                    placeholder="e.g., Electronics"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Price *</label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                    className="input"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Stock</label>
-                  <input
-                    type="number"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                    className="input"
-                    min="0"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Product Image URL</label>
-                  <input
-                    type="url"
-                    value={formData.image || ''}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    className="input"
-                    placeholder="https://example.com/product-image.jpg"
-                  />
-                </div>
-              </div>
-
-              {formData.image && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Image Preview</label>
-                  <img
-                    src={formData.image}
-                    alt="Product preview"
-                    className="w-32 h-32 rounded-lg object-cover border"
-                    onError={() => setError('Invalid image URL. Please provide a valid public image link.')}
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="input"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button type="submit" disabled={loading} className="btn btn-primary">
-                  {loading ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="btn btn-outline"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         )}
 
@@ -290,15 +292,15 @@ export const AdminPanelPage: React.FC = () => {
             </div>
           ) : products.length > 0 ? (
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-teal-400 h-[5rem] border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Image</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Price</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Stock</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Description</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold">Image</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold">Name</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold">Category</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold">Price</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold">Stock</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold break-words">Description</th>
+                  <th className="px-6 py-3 text-center text-lg text-cyan-50 font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -309,7 +311,7 @@ export const AdminPanelPage: React.FC = () => {
                         <img
                           src={product.image}
                           alt={product.name}
-                          className="w-12 h-12 rounded object-cover border"
+                          className="max-w-fit h-20 object-cover"
                         />
                       ) : (
                         <span className="text-gray-400">No image</span>
@@ -317,13 +319,13 @@ export const AdminPanelPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-3 text-sm font-medium">{product.name}</td>
                     <td className="px-6 py-3 text-sm">{product.category}</td>
-                    <td className="px-6 py-3 text-sm font-semibold">${product.price.toFixed(2)}</td>
+                    <td className="px-6 py-3 text-sm font-semibold">₹{product.price.toFixed(2)}</td>
                     <td className="px-6 py-3 text-sm">
                       <span className={product.stock > 0 ? 'text-green-600' : 'text-red-600'}>
                         {product.stock}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-600 line-clamp-1">
+                    <td className="px-6 py-3 text-sm text-gray-600">
                       {product.description}
                     </td>
                     <td className="px-6 py-3 text-sm">

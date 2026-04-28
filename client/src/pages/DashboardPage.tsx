@@ -3,7 +3,7 @@ import { useAppSelector } from '../hooks/useAppRedux.js';
 import { apiService } from '../services/api.js';
 import { CacheService } from '../utils/cache.js';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ShoppingCart, DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { ShoppingCart, IndianRupee, TrendingUp, Calendar } from 'lucide-react';
 
 interface CategoryStat {
   category: string;
@@ -11,10 +11,33 @@ interface CategoryStat {
   totalQuantity: number;
 }
 
+interface ProductRatingStat {
+  _id: string;
+  productName: string;
+  avgRating: number;
+  totalReviews: number;
+  category: string;
+}
+
+interface ProductRevenueStat {
+  productId: string;
+  productName: string;
+  category: string;
+  totalRevenue: number;
+  totalQuantity: number;
+}
+
+interface CategorySalesResponse {
+  categorySales: CategoryStat[];
+  productRevenue: ProductRevenueStat[];
+}
+
 export const DashboardPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [stats, setStats] = useState<any>(null);
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
+  const [productRevenueStats, setProductRevenueStats] = useState<ProductRevenueStat[]>([]);
+  const [productRatingStats, setProductRatingStats] = useState<ProductRatingStat[]>([]);
   const [loading, setLoading] = useState(true);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -39,14 +62,25 @@ export const DashboardPage: React.FC = () => {
 
         // Fetch category stats if admin
         if (user.role === 'admin') {
-          const cachedCategoryStats = CacheService.get<CategoryStat[]>('category:stats');
-          if (cachedCategoryStats) {
-            setCategoryStats(cachedCategoryStats);
+          const cachedCategorySales = CacheService.get<CategorySalesResponse>('category:sales:stats');
+          if (cachedCategorySales) {
+            setCategoryStats(cachedCategorySales.categorySales || []);
+            setProductRevenueStats(cachedCategorySales.productRevenue || []);
           }
 
-          const categoryData = await apiService.getCategoryWiseSalesStats() as CategoryStat[];
-          setCategoryStats(categoryData);
-          CacheService.set('category:stats', categoryData, 1000 * 60 * 10); // 10 minutes
+          const categorySalesData = await apiService.getCategoryWiseSalesStats();
+          setCategoryStats(categorySalesData.categorySales || []);
+          setProductRevenueStats(categorySalesData.productRevenue || []);
+          CacheService.set('category:sales:stats', categorySalesData, 1000 * 60 * 10); // 10 minutes
+
+          const cachedProductRatingStats = CacheService.get<ProductRatingStat[]>('product:rating:stats');
+          if (cachedProductRatingStats) {
+            setProductRatingStats(cachedProductRatingStats);
+          }
+
+          const productRatingData = await apiService.getProductWiseRatingStats() as ProductRatingStat[];
+          setProductRatingStats(productRatingData);
+          CacheService.set('product:rating:stats', productRatingData, 1000 * 60 * 10); // 10 minutes
         }
       } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -73,7 +107,7 @@ export const DashboardPage: React.FC = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card">
+          <div className="card bg-white inline-grid p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Total Products Bought</p>
@@ -83,17 +117,17 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="card">
+          <div className="card bg-white  inline-grid p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Total Amount Spent</p>
-                <p className="text-3xl font-bold">${stats.totalAmountSpent?.toFixed(2) || 0}</p>
+                <p className="text-3xl font-bold">₹{stats.totalAmountSpent?.toFixed(2) || 0}</p>
               </div>
-              <DollarSign className="w-12 h-12 text-green-500 opacity-20" />
+              <IndianRupee className="w-12 h-12 text-green-500 opacity-20" />
             </div>
           </div>
 
-          <div className="card">
+          <div className="card bg-white inline-grid p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Total Orders</p>
@@ -103,12 +137,12 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="card">
+          <div className="card bg-white inline-grid p-2">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm">Average Order Value</p>
                 <p className="text-3xl font-bold">
-                  ${stats.ordersCount > 0 ? (stats.totalAmountSpent / stats.ordersCount).toFixed(2) : 0}
+                  ₹{stats.ordersCount > 0 ? (stats.totalAmountSpent / stats.ordersCount).toFixed(2) : 0}
                 </p>
               </div>
               <Calendar className="w-12 h-12 text-orange-500 opacity-20" />
@@ -135,7 +169,7 @@ export const DashboardPage: React.FC = () => {
                   {stats.recentOrders.map((order: any) => (
                     <tr key={order._id} className="border-b hover:bg-gray-50">
                       <td className="px-6 py-3 text-sm">{order._id?.substring(0, 8)}...</td>
-                      <td className="px-6 py-3 text-sm font-semibold">${order.totalAmount?.toFixed(2)}</td>
+                      <td className="px-6 py-3 text-sm font-semibold">₹{order.totalAmount?.toFixed(2)}</td>
                       <td className="px-6 py-3 text-sm">{order.items?.length || 0} items</td>
                       <td className="px-6 py-3 text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -161,7 +195,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Category Stats (Admin Only) */}
-        {user?.role === 'admin' && categoryStats.length > 0 && (
+        {user?.role === 'admin' && (categoryStats.length > 0 || productRevenueStats.length > 0) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-bold mb-4">Sales by Category</h3>
@@ -187,20 +221,68 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold mb-4">Revenue by Category</h3>
+              <h3 className="text-xl font-bold mb-4">Revenue by Product (Category + Product)</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={categoryStats}
+                  data={productRevenueStats}
                   margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="category" />
+                  <XAxis dataKey="productName" />
                   <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="totalRevenue" fill="#3b82f6" />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      if (name === 'totalRevenue') return [`₹${Number(value).toFixed(2)}`, 'Revenue'];
+                      if (name === 'totalQuantity') return [value, 'Quantity'];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label, payload) => {
+                      const item = payload?.[0]?.payload;
+                      if (!item) return label;
+                      return `${item.category} - ${item.productName}`;
+                    }}
+                  />
+                  <Bar dataKey="totalRevenue">
+                    {productRevenueStats.map((_, index) => (
+                      <Cell key={`revenue-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
+
+            {productRatingStats.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
+                <h3 className="text-xl font-bold mb-4">Average Rating by Product</h3>
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart
+                    data={productRatingStats}
+                    margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="productName" />
+                    <YAxis domain={[0, 5]} />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        if (name === 'avgRating') return [`${Number(value).toFixed(2)} / 5`, 'Avg Rating'];
+                        if (name === 'totalReviews') return [value, 'Reviews'];
+                        return [value, name];
+                      }}
+                      labelFormatter={(label, payload) => {
+                        const item = payload?.[0]?.payload;
+                        if (!item) return label;
+                        return `${item.category} - ${item.productName}`;
+                      }}
+                    />
+                    <Bar dataKey="avgRating">
+                      {productRatingStats.map((_, index) => (
+                        <Cell key={`rating-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         )}
       </div>

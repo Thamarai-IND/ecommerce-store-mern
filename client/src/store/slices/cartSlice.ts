@@ -45,7 +45,21 @@ export const cartSlice = createSlice({
       const existingItem = state.items.find((item) => item.productId === action.payload.productId);
 
       if (existingItem) {
-        existingItem.quantity += action.payload.quantity;
+        const maxStock = action.payload.stock ?? existingItem.stock;
+        if (typeof maxStock === 'number') {
+          existingItem.quantity = Math.min(existingItem.quantity + action.payload.quantity, maxStock);
+        } else {
+          existingItem.quantity += action.payload.quantity;
+        }
+        if (action.payload.stock !== undefined) {
+          existingItem.stock = action.payload.stock;
+        }
+        if (action.payload.userReview !== undefined) {
+          existingItem.userReview = action.payload.userReview;
+        }
+        if (action.payload.userRating !== undefined) {
+          existingItem.userRating = action.payload.userRating;
+        }
       } else {
         state.items.push({
           _id: action.payload._id || Date.now().toString(),
@@ -74,7 +88,9 @@ export const cartSlice = createSlice({
         if (action.payload.quantity <= 0) {
           state.items = state.items.filter((item) => item.productId !== action.payload.productId);
         } else {
-          item.quantity = action.payload.quantity;
+          item.quantity = typeof item.stock === 'number'
+            ? Math.min(action.payload.quantity, item.stock)
+            : action.payload.quantity;
         }
 
         const { totalItems, totalPrice } = calculateTotal(state.items);
@@ -87,7 +103,11 @@ export const cartSlice = createSlice({
     incrementQuantity: (state, action: PayloadAction<string>) => {
       const item = state.items.find((item) => item.productId === action.payload);
       if (item) {
-        item.quantity += 1;
+        if (typeof item.stock === 'number') {
+          item.quantity = Math.min(item.quantity + 1, item.stock);
+        } else {
+          item.quantity += 1;
+        }
 
         const { totalItems, totalPrice } = calculateTotal(state.items);
         state.totalItems = totalItems;

@@ -23,7 +23,10 @@ export interface ICartItem {
   name: string;
   price: number;
   quantity: number;
+  stock?: number;
   image?: string;
+  userReview?: string;
+  userRating?: number;
 }
 
 export interface IOrder {

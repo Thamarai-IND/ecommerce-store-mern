@@ -74,12 +74,12 @@ body {
 
 /* Card styles */
 .card {
-  @apply bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition;
+  @apply bg-slate-950 rounded-xl shadow-md hover:shadow-lg transition;
 }
 
 /* Input styles */
 .input {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary;
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-transparent;
 }
 
 /* Form group */

@@ -6,11 +6,47 @@ export const config = {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || "development",
   
-  // Database URLs
+  // Database URLs with optional pooling parameters for Atlas
   databases: {
-    userService: process.env.MONGO_USER_SERVICE_URL || "mongodb://localhost:27017/ecommerce_users",
-    productService: process.env.MONGO_PRODUCT_SERVICE_URL || "mongodb://localhost:27017/ecommerce_products",
-    orderService: process.env.MONGO_ORDER_SERVICE_URL || "mongodb://localhost:27017/ecommerce_orders",
+    userService: {
+      url: process.env.MONGO_USER_SERVICE_URL || "mongodb://localhost:27017/ecommerce_users",
+      localUrl: "mongodb://localhost:27017/ecommerce_users",
+      options: {
+        maxPoolSize: 50,
+        minPoolSize: 10,
+        maxIdleTimeMS: 45000,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 5000,
+        retryWrites: true,
+      },
+    },
+    productService: {
+      url: process.env.MONGO_PRODUCT_SERVICE_URL || "mongodb://localhost:27017/ecommerce_products",
+      localUrl: "mongodb://localhost:27017/ecommerce_products",
+      options: {
+        maxPoolSize: 50,
+        minPoolSize: 10,
+        maxIdleTimeMS: 45000,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 5000,
+        retryWrites: true,
+      },
+    },
+    orderService: {
+      url: process.env.MONGO_ORDER_SERVICE_URL || "mongodb://localhost:27017/ecommerce_orders",
+      localUrl: "mongodb://localhost:27017/ecommerce_orders",
+      options: {
+        maxPoolSize: 50,
+        minPoolSize: 10,
+        maxIdleTimeMS: 45000,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 5000,
+        retryWrites: true,
+      },
+    },
   },
   
   // JWT Configuration
@@ -30,6 +66,12 @@ export const config = {
   
   // CORS
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000",
+
+  // Local dev fallback when Atlas connectivity is blocked
+  dbFallbackToLocal:
+    process.env.DB_FALLBACK_TO_LOCAL
+      ? process.env.DB_FALLBACK_TO_LOCAL === "true"
+      : (process.env.NODE_ENV || "development") === "development",
   
   // Cache TTL
   cacheTTL: {

@@ -6,9 +6,40 @@ let userServiceDb: mongoose.Connection | null = null;
 let productServiceDb: mongoose.Connection | null = null;
 let orderServiceDb: mongoose.Connection | null = null;
 
+const isLocalMongoUrl = (url: string): boolean =>
+  url.startsWith("mongodb://localhost") || url.startsWith("mongodb://127.0.0.1");
+
+const connectWithFallback = async (
+  serviceName: string,
+  primaryUrl: string,
+  localUrl: string,
+  options: mongoose.ConnectOptions
+): Promise<mongoose.Connection> => {
+  try {
+    return await mongoose.createConnection(primaryUrl, options).asPromise();
+  } catch (error) {
+    const shouldFallback =
+      config.dbFallbackToLocal && !isLocalMongoUrl(primaryUrl) && primaryUrl !== localUrl;
+
+    if (!shouldFallback) {
+      throw error;
+    }
+
+    console.warn(
+      `⚠ ${serviceName}: primary DB connection failed. Retrying with local MongoDB (${localUrl})`
+    );
+    return mongoose.createConnection(localUrl, options).asPromise();
+  }
+};
+
 export const connectUserServiceDB = async (): Promise<void> => {
   try {
-    userServiceDb = await mongoose.createConnection(config.databases.userService).asPromise();
+    userServiceDb = await connectWithFallback(
+      "User Service DB",
+      config.databases.userService.url,
+      config.databases.userService.localUrl,
+      config.databases.userService.options
+    );
     console.log("✓ User Service DB connected");
   } catch (error) {
     console.error("✗ User Service DB connection failed:", error);
@@ -18,7 +49,12 @@ export const connectUserServiceDB = async (): Promise<void> => {
 
 export const connectProductServiceDB = async (): Promise<void> => {
   try {
-    productServiceDb = await mongoose.createConnection(config.databases.productService).asPromise();
+    productServiceDb = await connectWithFallback(
+      "Product Service DB",
+      config.databases.productService.url,
+      config.databases.productService.localUrl,
+      config.databases.productService.options
+    );
     console.log("✓ Product Service DB connected");
   } catch (error) {
     console.error("✗ Product Service DB connection failed:", error);
@@ -28,7 +64,12 @@ export const connectProductServiceDB = async (): Promise<void> => {
 
 export const connectOrderServiceDB = async (): Promise<void> => {
   try {
-    orderServiceDb = await mongoose.createConnection(config.databases.orderService).asPromise();
+    orderServiceDb = await connectWithFallback(
+      "Order Service DB",
+      config.databases.orderService.url,
+      config.databases.orderService.localUrl,
+      config.databases.orderService.options
+    );
     console.log("✓ Order Service DB connected");
   } catch (error) {
     console.error("✗ Order Service DB connection failed:", error);

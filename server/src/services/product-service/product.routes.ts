@@ -95,6 +95,26 @@ export const createProductRoutes = (productModel: Model<IProduct & Document>): R
     }
   });
 
+  // Get category-wise product rating stats (admin only)
+  router.get("/stats/category-ratings", authenticate, adminOnly, async (_req: AuthRequest, res: Response) => {
+    try {
+      const result = await controller.getCategoryWiseRatingStats();
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get product-wise rating stats (admin only)
+  router.get("/stats/product-ratings", authenticate, adminOnly, async (_req: AuthRequest, res: Response) => {
+    try {
+      const result = await controller.getProductWiseRatingStats();
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
   // Get product by ID
   router.get("/:productId", async (req: AuthRequest, res: Response) => {
     try {

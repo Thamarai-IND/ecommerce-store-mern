@@ -5,6 +5,32 @@ import { setCache, getCache, deleteCache, deleteCachePattern } from "../../utils
 export class ProductController {
   constructor(private productModel: Model<IProduct & Document>) {}
 
+  private escapeRegex(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  private buildTokenSearchQuery(searchText: string) {
+    const terms = searchText
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((term) => this.escapeRegex(term));
+
+    if (terms.length === 0) {
+      return {};
+    }
+
+    // Require every typed word to appear in either name or description.
+    return {
+      $and: terms.map((term) => ({
+        $or: [
+          { name: { $regex: term, $options: "i" } },
+          { description: { $regex: term, $options: "i" } },
+        ],
+      })),
+    };
+  }
+
   private normalizeProductInput<T extends Partial<IProduct>>(data: T): T {
     const normalized = { ...data };
     if (typeof normalized.image === "string") {
@@ -99,7 +125,8 @@ export class ProductController {
   }
 
   async searchProducts(query: string, skip: number = 0, limit: number = 10) {
-    const cacheKey = `search:${query}:${skip}:${limit}`;
+    const cacheKey = `search:v2:${query}:${skip}:${limit}`;
+    const searchQuery = this.buildTokenSearchQuery(query);
     
     // Try to get from cache
     let result = await getCache(cacheKey);
@@ -109,10 +136,10 @@ export class ProductController {
 
     const [data, total] = await Promise.all([
       this.productModel
-        .find({ $text: { $search: query } })
+        .find(searchQuery)
         .skip(skip)
         .limit(limit),
-      this.productModel.countDocuments({ $text: { $search: query } }),
+      this.productModel.countDocuments(searchQuery),
     ]);
 
     result = {
@@ -194,10 +221,10 @@ export class ProductController {
     }
 
     if (filters.search) {
-      query.$text = { $search: filters.search };
+      Object.assign(query, this.buildTokenSearchQuery(filters.search));
     }
 
-    const cacheKey = `filter:${JSON.stringify(filters)}:${skip}:${limit}`;
+    const cacheKey = `filter:v2:${JSON.stringify(filters)}:${skip}:${limit}`;
     
     // Try to get from cache
     let result = await getCache(cacheKey);
@@ -220,5 +247,72 @@ export class ProductController {
     // Cache the results
     await setCache(cacheKey, result, 300);
     return result;
+  }
+
+  async getCategoryWiseRatingStats() {
+    const cacheKey = "stats:category:ratings";
+
+    // Try to get from cache
+    let stats = await getCache(cacheKey);
+    if (stats) {
+      return stats;
+    }
+
+    stats = await this.productModel.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          avgRating: { $avg: "$rating" },
+          productsCount: { $sum: 1 },
+          totalReviews: { $sum: "$reviews" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          category: "$_id",
+          avgRating: { $round: ["$avgRating", 2] },
+          productsCount: 1,
+          totalReviews: 1,
+        },
+      },
+      {
+        $sort: { avgRating: -1 },
+      },
+    ]);
+
+    await setCache(cacheKey, stats, 600);
+    return stats;
+  }
+
+  async getProductWiseRatingStats() {
+    const cacheKey = "stats:product:ratings";
+
+    // Try to get from cache
+    let stats = await getCache(cacheKey);
+    if (stats) {
+      return stats;
+    }
+
+    stats = await this.productModel.aggregate([
+      {
+        $match: { rating: { $gt: 0 } },
+      },
+      {
+        $project: {
+          _id: 1,
+          productName: "$name",
+          avgRating: "$rating",
+          totalReviews: "$reviews",
+          category: "$category",
+        },
+      },
+      {
+        $sort: { avgRating: -1 },
+      },
+    ]);
+
+    await setCache(cacheKey, stats, 600);
+    return stats;
   }
 }

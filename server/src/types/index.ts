@@ -20,14 +20,23 @@ export interface IProduct {
   image?: string;
   rating?: number;
   reviews?: number;
+  reviewsData?: {
+    userId: string;
+    rating?: number;
+    review?: string;
+    createdAt: Date;
+  }[];
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface ICartItem {
   productId: string;
+  name: string;
   quantity: number;
   price: number;
+  userReview?: string;
+  userRating?: number;
 }
 
 export interface IOrder {

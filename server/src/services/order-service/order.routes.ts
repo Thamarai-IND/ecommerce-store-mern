@@ -1,12 +1,16 @@
 import { Router, Response } from "express";
 import { Model, Document } from "mongoose";
 import { OrderController } from "./order.controller.js";
-import { IOrder, AuthRequest } from "../../types/index.js";
+import { IOrder, IProduct, IUser, AuthRequest } from "../../types/index.js";
 import { authenticate, adminOnly } from "../../middleware/auth.js";
 
-export const createOrderRoutes = (orderModel: Model<IOrder & Document>): Router => {
+export const createOrderRoutes = (
+  orderModel: Model<IOrder & Document>,
+  productModel: Model<IProduct & Document>,
+  userModel: Model<IUser & Document>
+): Router => {
   const router = Router();
-  const controller = new OrderController(orderModel);
+  const controller = new OrderController(orderModel, productModel, userModel);
 
   // Create order
   router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
@@ -56,6 +60,36 @@ export const createOrderRoutes = (orderModel: Model<IOrder & Document>): Router 
       const limit = parseInt(req.query.limit as string) || 10;
 
       const result = await controller.getAllOrders(skip, limit);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get product rating summary from order feedback
+  router.get("/feedback/summary/:productId", async (req: AuthRequest, res: Response) => {
+    try {
+      const summary = await controller.getProductRatingSummaryFromOrders(req.params.productId);
+      res.status(200).json(summary);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Get product reviews from order feedback
+  router.get("/feedback/reviews/:productId", async (req: AuthRequest, res: Response) => {
+    try {
+      const reviews = await controller.getProductReviewsWithUserNames(req.params.productId);
+      res.status(200).json(reviews);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Sync products collection review/rating fields from order feedback
+  router.post("/feedback/sync-products", async (_req: AuthRequest, res: Response) => {
+    try {
+      const result = await controller.syncProductsFromOrdersFeedback();
       res.status(200).json(result);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });

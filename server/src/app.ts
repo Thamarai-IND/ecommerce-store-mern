@@ -1,4 +1,4 @@
-import express, { Express, Response, Request } from "express";
+import express, { Express, Response, Request, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -25,7 +25,7 @@ export const createApp = (): Express => {
   const app = express();
 
   // Middleware
-  app.use(helmet());
+  app.use(helmet()); // security middleware for express that helps to protect your backend by setting various HTTP header's.
   app.use(cors({ origin: config.corsOrigin }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -66,7 +66,7 @@ export const setupRoutes = (app: Express): void => {
       // @ts-ignore - Model type compatibility
     app.use("/api/products", createProductRoutes(Product));
       // @ts-ignore - Model type compatibility
-    app.use("/api/orders", createOrderRoutes(Order));
+    app.use("/api/orders", createOrderRoutes(Order, Product, User));
 
     console.log("✓ Routes configured");
   } catch (error) {
@@ -99,7 +99,7 @@ export const initializeApplication = async (): Promise<Express> => {
 
 // Global error handler
 export const setupErrorHandling = (app: Express): void => {
-  app.use((error: Error, _req: Request, res: Response) => {
+  app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error("Uncaught Error:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   });

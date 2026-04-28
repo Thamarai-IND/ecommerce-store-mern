@@ -6,6 +6,10 @@ const CartItemSchema = new Schema<ICartItem>({
     type: String,
     required: true,
   },
+  name: {
+    type: String,
+    required: true,
+  },
   quantity: {
     type: Number,
     required: true,
@@ -15,6 +19,16 @@ const CartItemSchema = new Schema<ICartItem>({
     type: Number,
     required: true,
     min: 0,
+  },
+  userReview: {
+    type: String,
+    trim: true,
+    maxlength: 1000,
+  },
+  userRating: {
+    type: Number,
+    min: 1,
+    max: 5,
   },
 });
 

@@ -9,7 +9,8 @@
     "dev:watch": "tsc-watch --onSuccess \"node dist/server.js\"",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "migrate:atlas": "tsc && node dist/scripts/migrate-to-atlas.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

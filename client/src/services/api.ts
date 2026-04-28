@@ -14,6 +14,47 @@ interface ProductListNormalized {
   total: number;
 }
 
+interface CreateOrderItemPayload {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  userReview?: string;
+  userRating?: number;
+}
+
+interface ProductFeedbackSummary {
+  averageRating: number;
+  reviewCount: number;
+}
+
+interface ProductFeedbackReview {
+  userId: string;
+  userName: string;
+  rating?: number;
+  review?: string;
+  createdAt?: string;
+}
+
+interface CategorySalesStat {
+  category: string;
+  totalRevenue: number;
+  totalQuantity: number;
+}
+
+interface ProductRevenueStat {
+  productId: string;
+  productName: string;
+  category: string;
+  totalRevenue: number;
+  totalQuantity: number;
+}
+
+interface CategorySalesResponse {
+  categorySales: CategorySalesStat[];
+  productRevenue: ProductRevenueStat[];
+}
+
 export class ApiService {
   private client: AxiosInstance;
 
@@ -129,7 +170,7 @@ export class ApiService {
   }
 
   // Order endpoints
-  async createOrder(items: any[], totalAmount: number, paymentMethod: string) {
+  async createOrder(items: CreateOrderItemPayload[], totalAmount: number, paymentMethod: string) {
     const response = await this.client.post('/orders', {
       items,
       totalAmount,
@@ -160,8 +201,33 @@ export class ApiService {
     return response.data;
   }
 
-  async getCategoryWiseSalesStats() {
+  async getCategoryWiseSalesStats(): Promise<CategorySalesResponse> {
     const response = await this.client.get('/orders/stats/category-sales');
+    return response.data;
+  }
+
+  async getProductFeedbackSummary(productId: string): Promise<ProductFeedbackSummary> {
+    const response = await this.client.get(`/orders/feedback/summary/${productId}`);
+    return response.data;
+  }
+
+  async getProductFeedbackReviews(productId: string): Promise<ProductFeedbackReview[]> {
+    const response = await this.client.get(`/orders/feedback/reviews/${productId}`);
+    return response.data;
+  }
+
+  async syncProductFeedbackFromOrders() {
+    const response = await this.client.post('/orders/feedback/sync-products');
+    return response.data;
+  }
+
+  async getCategoryWiseRatingStats() {
+    const response = await this.client.get('/products/stats/category-ratings');
+    return response.data;
+  }
+
+  async getProductWiseRatingStats() {
+    const response = await this.client.get('/products/stats/product-ratings');
     return response.data;
   }
 

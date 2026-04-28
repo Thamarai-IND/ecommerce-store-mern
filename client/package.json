@@ -10,8 +10,8 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
-    "react": "^19.0.0-canary-latest",
-    "react-dom": "^19.0.0-canary-latest",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "@reduxjs/toolkit": "^1.9.7",
     "react-redux": "^8.1.3",
     "axios": "^1.6.2",

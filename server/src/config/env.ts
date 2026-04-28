@@ -65,7 +65,16 @@ export const config = {
   },
   
   // CORS
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  corsOrigin: process.env.CORS_ORIGIN
+    ? [
+        ...process.env.CORS_ORIGIN
+          .split(",")
+          .map((origin) => origin.trim().replace(/\/$/, "")),
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://ecommerce-store-mern-six.vercel.app/"
+      ]
+    : ["http://localhost:3000", "http://127.0.0.1:3000", "https://ecommerce-store-mern-six.vercel.app/"],
 
   // Local dev fallback when Atlas connectivity is blocked
   dbFallbackToLocal:
